@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://cdnjs.cloudflare.com; font-src https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'none';">
+    <title>🔐 Sistema de Cifrado RSA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-shield-alt"></i> Sistema de Cifrado RSA-2048</h1>
+            <p class="subtitle">Cifrado asimétrico 100% en tu navegador</p>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Status Panel -->
+        <section class="status-panel" id="statusPanel">
+            <div class="status-item">
+                <i class="fas fa-key"></i>
+                <span id="keyStatus">Sin claves generadas</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-info-circle"></i>
+                <span id="infoStatus">Genera tus claves para comenzar</span>
+            </div>
+        </section>
+
+        <!-- Tabs Navigation -->
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="generate">
+                <i class="fas fa-key"></i> Generar Claves
+            </button>
+            <button class="tab-button" data-tab="encrypt">
+                <i class="fas fa-lock"></i> Cifrar
+            </button>
+            <button class="tab-button" data-tab="decrypt">
+                <i class="fas fa-unlock"></i> Descifrar
+            </button>
+            <button class="tab-button" data-tab="export">
+                <i class="fas fa-download"></i> Exportar/Importar
+            </button>
+        </nav>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Generate Keys Tab -->
+            <div class="tab-panel active" id="generate">
+                <h2><i class="fas fa-key"></i> Generar Claves RSA</h2>
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Las claves se generan y almacenan de forma segura en tu navegador. Nunca salen de tu dispositivo.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> Contraseña de Protección:
+                    </label>
+                    <input type="password" id="password" placeholder="Mínimo 8 caracteres" required>
+                    <small>Esta contraseña protegerá tu clave privada</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="passwordConfirm">
+                        <i class="fas fa-lock"></i> Confirmar Contraseña:
+                    </label>
+                    <input type="password" id="passwordConfirm" placeholder="Repite la contraseña" required>
+                </div>
+
+                <button class="btn btn-primary" id="generateBtn">
+                    <i class="fas fa-cog fa-spin" style="display: none;" id="generateSpinner"></i>
+                    <i class="fas fa-key" id="generateIcon"></i>
+                    Generar Claves
+                </button>
+
+                <div class="result-box" id="generateResult" style="display: none;"></div>
+            </div>
+
+            <!-- Encrypt Tab -->
+            <div class="tab-panel" id="encrypt">
+                <h2><i class="fas fa-lock"></i> Cifrar Mensaje</h2>
+                
+                <div class="form-group">
+                    <label for="messageToEncrypt">
+                        <i class="fas fa-edit"></i> Mensaje a Cifrar:
+                    </label>
+                    <textarea id="messageToEncrypt" rows="5" placeholder="Escribe tu mensaje aquí..." maxlength="190"></textarea>
+                    <small id="charCount">0 / 190 caracteres</small>
+                </div>
+
+                <button class="btn btn-success" id="encryptBtn">
+                    <i class="fas fa-lock"></i> Cifrar Mensaje
+                </button>
+
+                <div class="result-box" id="encryptResult" style="display: none;"></div>
+            </div>
+
+            <!-- Decrypt Tab -->
+            <div class="tab-panel" id="decrypt">
+                <h2><i class="fas fa-unlock"></i> Descifrar Mensaje</h2>
+                
+                <div class="form-group">
+                    <label for="messageToDecrypt">
+                        <i class="fas fa-file-code"></i> Mensaje Cifrado (Base64):
+                    </label>
+                    <textarea id="messageToDecrypt" rows="5" placeholder="Pega aquí el mensaje cifrado en formato Base64..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="decryptPassword">
+                        <i class="fas fa-key"></i> Contraseña de la Clave Privada:
+                    </label>
+                    <input type="password" id="decryptPassword" placeholder="Tu contraseña" required>
+                </div>
+
+                <button class="btn btn-warning" id="decryptBtn">
+                    <i class="fas fa-unlock"></i> Descifrar Mensaje
+                </button>
+
+                <div class="result-box" id="decryptResult" style="display: none;"></div>
+            </div>
+
+            <!-- Export/Import Tab -->
+            <div class="tab-panel" id="export">
+                <h2><i class="fas fa-download"></i> Exportar/Importar Claves</h2>
+                
+                <div class="export-section">
+                    <h3><i class="fas fa-file-export"></i> Exportar Claves</h3>
+                    <p>Descarga tus claves para hacer backup o usarlas en otro dispositivo.</p>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-secondary" id="exportPublicBtn">
+                            <i class="fas fa-file-download"></i> Exportar Clave Pública
+                        </button>
+                        <button class="btn btn-secondary" id="exportPrivateBtn">
+                            <i class="fas fa-file-download"></i> Exportar Clave Privada
+                        </button>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="import-section">
+                    <h3><i class="fas fa-file-upload"></i> Importar Claves</h3>
+                    <p>Carga claves previamente exportadas.</p>
+                    
+                    <div class="form-group">
+                        <label for="importPublicFile">
+                            <i class="fas fa-file"></i> Importar Clave Pública:
+                        </label>
+                        <input type="file" id="importPublicFile" accept=".pem,.txt">
+                        <button class="btn btn-info" id="importPublicBtn">
+                            <i class="fas fa-upload"></i> Importar Pública
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="importPrivateFile">
+                            <i class="fas fa-file"></i> Importar Clave Privada:
+                        </label>
+                        <input type="file" id="importPrivateFile" accept=".pem,.txt">
+                        <button class="btn btn-info" id="importPrivateBtn">
+                            <i class="fas fa-upload"></i> Importar Privada
+                        </button>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="danger-zone">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Zona de Peligro</h3>
+                    <button class="btn btn-danger" id="deleteKeysBtn">
+                        <i class="fas fa-trash"></i> Eliminar Todas las Claves
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>🔐 Sistema de Cifrado RSA-2048 | 100% Cliente | Sin envío de datos a servidores</p>
+        <p><small>Creado con Web Crypto API</small></p>
+    </footer>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/crypto.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>
