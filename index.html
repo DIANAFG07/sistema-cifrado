@@ -31,6 +31,29 @@
             </div>
         </section>
 
+        <section class="guide-panel" id="guidePanel">
+            <h3><i class="fas fa-route"></i> Asistente Rápido</h3>
+            <ol class="guide-steps" id="guideSteps">
+                <li id="stepGenerate">1. Genera o importa tus claves de cifrado.</li>
+                <li id="stepEncrypt">2. Cifra un mensaje y copia el resultado JSON.</li>
+                <li id="stepDecrypt">3. Pega el JSON en Descifrar y valida el contenido.</li>
+            </ol>
+            <div class="wizard-controls">
+                <div class="wizard-status" id="wizardStatus">Wizard inactivo</div>
+                <div class="wizard-buttons">
+                    <button class="btn btn-primary" id="startWizardBtn" type="button">
+                        <i class="fas fa-hat-wizard"></i> Iniciar Wizard
+                    </button>
+                    <button class="btn btn-secondary" id="wizardPrevBtn" type="button" disabled>
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button class="btn btn-success" id="wizardNextBtn" type="button" disabled>
+                        <i class="fas fa-arrow-right"></i> Siguiente
+                    </button>
+                </div>
+            </div>
+        </section>
+
         <!-- Tabs Navigation -->
         <nav class="tabs">
             <button class="tab-button active" data-tab="generate">
@@ -61,8 +84,12 @@
                     <label for="password">
                         <i class="fas fa-lock"></i> Contraseña de Protección:
                     </label>
-                    <input type="password" id="password" placeholder="Mínimo 8 caracteres" required>
+                    <input type="password" id="password" placeholder="Minimo 12 caracteres" required>
                     <small>Esta contraseña protegerá tu clave privada</small>
+                    <div class="password-meter" aria-live="polite">
+                        <div class="password-meter-bar" id="passwordStrengthBar"></div>
+                    </div>
+                    <small id="passwordStrengthText">Fortaleza: sin evaluar</small>
                 </div>
 
                 <div class="form-group">
@@ -93,8 +120,20 @@
                     <small id="charCount">0 / 190 caracteres</small>
                 </div>
 
+                <div class="form-group">
+                    <label for="encryptSignPassword">
+                        <i class="fas fa-pen-nib"></i> Contraseña para Firma Digital (Opcional):
+                    </label>
+                    <input type="password" id="encryptSignPassword" placeholder="Solo si quieres incluir firma digital">
+                    <small>Si no la ingresas, el mensaje se cifra sin firma.</small>
+                </div>
+
                 <button class="btn btn-success" id="encryptBtn">
                     <i class="fas fa-lock"></i> Cifrar Mensaje
+                </button>
+
+                <button class="btn btn-secondary btn-inline" id="copyEncryptResultBtn" type="button">
+                    <i class="fas fa-copy"></i> Copiar Resultado de Cifrado
                 </button>
 
                 <div class="result-box" id="encryptResult" style="display: none;"></div>
@@ -106,9 +145,9 @@
                 
                 <div class="form-group">
                     <label for="messageToDecrypt">
-                        <i class="fas fa-file-code"></i> Mensaje Cifrado (Base64):
+                        <i class="fas fa-file-code"></i> Mensaje Cifrado (JSON o solo payload Base64):
                     </label>
-                    <textarea id="messageToDecrypt" rows="5" placeholder="Pega aquí el mensaje cifrado en formato Base64..."></textarea>
+                    <textarea id="messageToDecrypt" rows="5" placeholder="Pega aquí el JSON completo de cifrado o solo el campo payload..."></textarea>
                 </div>
 
                 <div class="form-group">
@@ -120,6 +159,10 @@
 
                 <button class="btn btn-warning" id="decryptBtn">
                     <i class="fas fa-unlock"></i> Descifrar Mensaje
+                </button>
+
+                <button class="btn btn-secondary btn-inline" id="copyDecryptResultBtn" type="button">
+                    <i class="fas fa-copy"></i> Copiar Resultado de Descifrado
                 </button>
 
                 <div class="result-box" id="decryptResult" style="display: none;"></div>
@@ -139,6 +182,12 @@
                         </button>
                         <button class="btn btn-secondary" id="exportPrivateBtn">
                             <i class="fas fa-file-download"></i> Exportar Clave Privada
+                        </button>
+                        <button class="btn btn-secondary" id="exportSignPublicBtn">
+                            <i class="fas fa-file-download"></i> Exportar Firma Pública
+                        </button>
+                        <button class="btn btn-secondary" id="exportSignPrivateBtn">
+                            <i class="fas fa-file-download"></i> Exportar Firma Privada
                         </button>
                     </div>
                 </div>
@@ -166,6 +215,26 @@
                         <input type="file" id="importPrivateFile" accept=".pem,.txt">
                         <button class="btn btn-info" id="importPrivateBtn">
                             <i class="fas fa-upload"></i> Importar Privada
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="importSignPublicFile">
+                            <i class="fas fa-file-signature"></i> Importar Firma Pública:
+                        </label>
+                        <input type="file" id="importSignPublicFile" accept=".pem,.txt">
+                        <button class="btn btn-info" id="importSignPublicBtn">
+                            <i class="fas fa-upload"></i> Importar Firma Pública
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="importSignPrivateFile">
+                            <i class="fas fa-file-signature"></i> Importar Firma Privada:
+                        </label>
+                        <input type="file" id="importSignPrivateFile" accept=".pem,.txt">
+                        <button class="btn btn-info" id="importSignPrivateBtn">
+                            <i class="fas fa-upload"></i> Importar Firma Privada
                         </button>
                     </div>
                 </div>

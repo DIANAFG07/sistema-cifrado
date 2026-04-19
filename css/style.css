@@ -79,6 +79,48 @@ body {
     color: var(--primary);
 }
 
+.guide-panel {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+}
+
+.guide-panel h3 {
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.guide-steps {
+    margin-left: 20px;
+    color: var(--dark);
+    line-height: 1.7;
+}
+
+.guide-steps li.done {
+    color: #0f766e;
+    font-weight: 600;
+}
+
+.wizard-controls {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed #93c5fd;
+}
+
+.wizard-status {
+    font-weight: 600;
+    color: #1d4ed8;
+    margin-bottom: 10px;
+}
+
+.wizard-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 /* Tabs */
 .tabs {
     display: flex;
@@ -174,6 +216,21 @@ body {
     font-size: 0.875rem;
 }
 
+.password-meter {
+    margin-top: 10px;
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.password-meter-bar {
+    height: 100%;
+    width: 0;
+    transition: width 0.25s ease, background 0.25s ease;
+}
+
 /* Buttons */
 .btn {
     padding: 12px 24px;
@@ -193,6 +250,11 @@ body {
 
 .btn i {
     margin-right: 8px;
+}
+
+.btn-inline {
+    margin-top: 12px;
+    margin-left: 8px;
 }
 
 .btn-primary {
@@ -363,5 +425,14 @@ hr {
 
     .status-panel {
         flex-direction: column;
+    }
+
+    .wizard-buttons .btn {
+        width: 100%;
+    }
+
+    .btn-inline {
+        margin-left: 0;
+        width: 100%;
     }
 }

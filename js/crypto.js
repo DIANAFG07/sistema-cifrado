@@ -9,6 +9,7 @@ class RSACrypto {
         this.privateKey = null;
         this.keyPair = null;
         this.signKeyPair = null;
+        this.kdfIterations = 310000;
     }
 
     /** GENERACIÓN DE CLAVES RSA */
@@ -39,12 +40,19 @@ class RSACrypto {
     }
 
     async exportPrivateKey(password) {
+        if (!this.privateKey) {
+            throw new Error('No hay clave privada cargada para exportar.');
+        }
         const exported = await crypto.subtle.exportKey("pkcs8", this.privateKey);
         return await this.encryptPrivateKey(exported, password);
     }
 
     /** CIFRADO DE CLAVE PRIVADA CON CONTRASEÑA */
     async encryptPrivateKey(keyData, password) {
+        if (typeof password !== 'string' || password.length < 8) {
+            throw new Error('La contraseña debe tener al menos 8 caracteres.');
+        }
+
         const enc = new TextEncoder();
         const keyMaterial = await crypto.subtle.importKey(
             "raw", enc.encode(password), "PBKDF2", false, ["deriveBits", "deriveKey"]
@@ -52,7 +60,7 @@ class RSACrypto {
 
         const salt = crypto.getRandomValues(new Uint8Array(16));
         const key = await crypto.subtle.deriveKey(
-            { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+            { name: "PBKDF2", salt, iterations: this.kdfIterations, hash: "SHA-256" },
             keyMaterial,
             { name: "AES-GCM", length: 256 },
             false,
@@ -72,26 +80,34 @@ class RSACrypto {
 
     /** DESCIFRADO DE CLAVE PRIVADA */
     async decryptPrivateKey(encryptedPem, password) {
-        const data = new Uint8Array(this.pemToArrayBuffer(encryptedPem, 'ENCRYPTED PRIVATE KEY'));
-        const salt = data.slice(0, 16);
-        const iv = data.slice(16, 28);
-        const encrypted = data.slice(28);
+        if (!password) {
+            throw new Error('Debes ingresar la contraseña de la clave privada.');
+        }
 
-        const enc = new TextEncoder();
-        const keyMaterial = await crypto.subtle.importKey(
-            "raw", enc.encode(password), "PBKDF2", false, ["deriveKey", "deriveBits"]
-        );
+        try {
+            const data = new Uint8Array(this.pemToArrayBuffer(encryptedPem, 'ENCRYPTED PRIVATE KEY'));
+            const salt = data.slice(0, 16);
+            const iv = data.slice(16, 28);
+            const encrypted = data.slice(28);
 
-        const key = await crypto.subtle.deriveKey(
-            { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
-            keyMaterial,
-            { name: "AES-GCM", length: 256 },
-            false,
-            ["decrypt"]
-        );
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                "raw", enc.encode(password), "PBKDF2", false, ["deriveKey", "deriveBits"]
+            );
 
-        const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encrypted);
-        return decrypted;
+            const key = await crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt, iterations: this.kdfIterations, hash: "SHA-256" },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["decrypt"]
+            );
+
+            const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encrypted);
+            return decrypted;
+        } catch (error) {
+            throw new Error('Contraseña incorrecta o clave privada dañada.');
+        }
     }
 
     /** CIFRADO Y DESCIFRADO SIMPLE */
@@ -107,6 +123,29 @@ class RSACrypto {
         return new TextDecoder().decode(decrypted);
     }
 
+    async importPublicKey(pem) {
+        this.publicKey = await crypto.subtle.importKey(
+            "spki",
+            this.pemToArrayBuffer(pem, 'PUBLIC KEY'),
+            { name: "RSA-OAEP", hash: "SHA-256" },
+            false,
+            ["encrypt"]
+        );
+        return this.publicKey;
+    }
+
+    async importPrivateKey(encryptedPem, password) {
+        const raw = await this.decryptPrivateKey(encryptedPem, password);
+        this.privateKey = await crypto.subtle.importKey(
+            "pkcs8",
+            raw,
+            { name: "RSA-OAEP", hash: "SHA-256" },
+            false,
+            ["decrypt"]
+        );
+        return this.privateKey;
+    }
+
     /** UTILIDADES PEM */
     arrayBufferToPem(buffer, label) {
         const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
@@ -115,10 +154,22 @@ class RSACrypto {
     }
 
     pemToArrayBuffer(pem, label) {
+        if (!pem || typeof pem !== 'string') {
+            throw new Error('Contenido PEM vacío o inválido.');
+        }
+        if (!pem.includes(`-----BEGIN ${label}-----`) || !pem.includes(`-----END ${label}-----`)) {
+            throw new Error(`Formato PEM inválido para ${label}.`);
+        }
+
         const b64 = pem.replace(`-----BEGIN ${label}-----`, '')
                        .replace(`-----END ${label}-----`, '')
                        .replace(/\s/g, '');
-        return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+
+        try {
+            return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+        } catch (error) {
+            throw new Error(`Contenido Base64 inválido en ${label}.`);
+        }
     }
 
     /** CIFRADO HÍBRIDO RSA + AES */
