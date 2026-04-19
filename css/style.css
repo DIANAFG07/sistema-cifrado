@@ -203,6 +203,11 @@ body {
     transition: border 0.3s;
 }
 
+.form-group textarea {
+    overflow: hidden;
+    resize: none;
+}
+
 .form-group input:focus,
 .form-group textarea:focus {
     outline: none;
@@ -338,6 +343,18 @@ body {
     overflow-x: auto;
     margin-top: 10px;
     font-size: 0.875rem;
+}
+
+.result-text {
+    width: 100%;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    background: var(--white);
+    padding: 12px;
+    font-size: 0.95rem;
+    color: var(--dark);
+    overflow: hidden;
+    resize: none;
 }
 
 /* Export/Import Sections */

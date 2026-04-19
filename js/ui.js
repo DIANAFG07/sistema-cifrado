@@ -67,6 +67,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     refs.messageToEncrypt.addEventListener('input', () => {
         const length = refs.messageToEncrypt.value.length;
         refs.charCount.textContent = `${length} / 190 caracteres`;
+        autoGrowTextarea(refs.messageToEncrypt);
+    });
+
+    refs.messageToDecrypt.addEventListener('input', () => {
+        autoGrowTextarea(refs.messageToDecrypt);
     });
 
     refs.password.addEventListener('input', () => {
@@ -127,27 +132,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             await rsaCrypto.importPublicKey(publicPem);
             const payload = await rsaCrypto.encryptHybrid(message);
 
-            const result = { payload };
             let signed = false;
+            let hash = null;
+            let signature = null;
 
             const signPrivatePem = await storageManager.getKey('signPrivateKey');
             if (signPrivatePem) {
                 const signPassword = refs.encryptSignPassword.value;
                 if (signPassword) {
                     await rsaCrypto.importSignPrivateKey(signPrivatePem, signPassword);
-                    const hash = await rsaCrypto.hashData(message);
-                    const signature = await rsaCrypto.signData(hash);
-                    result.hash = hash;
-                    result.signature = signature;
+                    hash = await rsaCrypto.hashData(message);
+                    signature = await rsaCrypto.signData(hash);
                     signed = true;
                 }
             }
 
-            showResult(refs.encryptResult, JSON.stringify(result, null, 2), 'success');
+            refs.messageToDecrypt.value = payload;
+            autoGrowTextarea(refs.messageToDecrypt);
+
+            showResult(refs.encryptResult, payload, 'success', { asTextarea: true });
             if (signed) {
-                toast('Mensaje cifrado y firmado.', 'success');
+                toast('Mensaje cifrado y enviado al cuadro de descifrado. Firma generada opcionalmente.', 'success');
             } else {
-                toast('Mensaje cifrado. Nota: se envió sin firma digital.', 'info');
+                toast('Mensaje cifrado y enviado al cuadro de descifrado.', 'success');
+            }
+
+            if (signed && hash && signature) {
+                console.info('Firma generada para este payload:', { hash, signature });
             }
             await updateGuideSteps(refs);
             if (wizard.active) {
@@ -471,6 +482,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderPasswordStrength('', refs);
     await updateGuideSteps(refs);
     updateWizardControls(wizard, refs);
+    autoGrowTextarea(refs.messageToEncrypt);
+    autoGrowTextarea(refs.messageToDecrypt);
 });
 
 function setActiveTab(tabName, refs) {
@@ -646,7 +659,8 @@ async function copyResultFromBox(resultBox, label) {
         if (resultBox.style.display === 'none') {
             throw new Error(`Primero genera un ${label} para copiar.`);
         }
-        const text = resultBox.innerText.trim();
+        const textarea = resultBox.querySelector('textarea');
+        const text = (textarea ? textarea.value : resultBox.innerText).trim();
         if (!text) {
             throw new Error(`El ${label} esta vacio.`);
         }
@@ -658,9 +672,18 @@ async function copyResultFromBox(resultBox, label) {
     }
 }
 
-function showResult(element, content, type) {
+function showResult(element, content, type, options = {}) {
     element.className = `result-box ${type}`;
     element.style.display = 'block';
+
+    if (options.asTextarea) {
+        element.innerHTML = '<textarea class="result-text" readonly></textarea>';
+        const output = element.querySelector('textarea');
+        output.value = content;
+        autoGrowTextarea(output);
+        return;
+    }
+
     element.innerHTML = `<pre>${escapeHtml(content)}</pre>`;
 }
 
@@ -711,4 +734,13 @@ function strongPassword(password) {
 
 function getPasswordRequirements() {
     return 'La contraseña debe tener minimo 12 caracteres, una mayuscula, una minuscula, un numero y un simbolo.';
+}
+
+function autoGrowTextarea(textarea) {
+    if (!textarea) {
+        return;
+    }
+
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.max(textarea.scrollHeight, 96)}px`;
 }
